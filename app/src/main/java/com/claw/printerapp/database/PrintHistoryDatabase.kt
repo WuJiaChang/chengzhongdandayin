@@ -14,7 +14,7 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
 
     companion object {
         private const val DATABASE_NAME = "printHistory.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         private const val TABLE_NAME = "print_history"
 
         private const val COLUMN_ID = "id"
@@ -22,6 +22,7 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
         private const val COLUMN_DATE = "date"
         private const val COLUMN_TIME = "time"
         private const val COLUMN_CAR_NUMBER = "car_number"
+        private const val COLUMN_SQUARE_WEIGHT = "square_weight"
         private const val COLUMN_GROSS_WEIGHT = "gross_weight"
         private const val COLUMN_TARE_WEIGHT = "tare_weight"
         private const val COLUMN_NET_WEIGHT = "net_weight"
@@ -36,6 +37,7 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
                 $COLUMN_DATE TEXT NOT NULL,
                 $COLUMN_TIME TEXT NOT NULL,
                 $COLUMN_CAR_NUMBER TEXT NOT NULL,
+                $COLUMN_SQUARE_WEIGHT TEXT NOT NULL,
                 $COLUMN_GROSS_WEIGHT TEXT NOT NULL,
                 $COLUMN_TARE_WEIGHT TEXT NOT NULL,
                 $COLUMN_NET_WEIGHT TEXT NOT NULL,
@@ -46,8 +48,13 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
-        onCreate(db)
+        if (oldVersion < 2) {
+            // 从版本1升级到版本2，添加方量字段
+            db?.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_SQUARE_WEIGHT TEXT DEFAULT ''")
+        } else {
+            db?.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
+            onCreate(db)
+        }
     }
 
     /**
@@ -60,6 +67,7 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
             put(COLUMN_DATE, printHistory.date)
             put(COLUMN_TIME, printHistory.time)
             put(COLUMN_CAR_NUMBER, printHistory.carNumber)
+            put(COLUMN_SQUARE_WEIGHT, printHistory.squareWeight)
             put(COLUMN_GROSS_WEIGHT, printHistory.grossWeight)
             put(COLUMN_TARE_WEIGHT, printHistory.tareWeight)
             put(COLUMN_NET_WEIGHT, printHistory.netWeight)
@@ -99,12 +107,13 @@ class PrintHistoryDatabase(context: Context) : SQLiteOpenHelper(context, DATABAS
             val date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE))
             val time = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TIME))
             val carNumber = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CAR_NUMBER))
+            val squareWeight = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SQUARE_WEIGHT))
             val grossWeight = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROSS_WEIGHT))
             val tareWeight = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TARE_WEIGHT))
             val netWeight = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NET_WEIGHT))
             val timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_TIMESTAMP))
 
-            list.add(PrintHistory(id, sequenceNumber, date, time, carNumber, grossWeight, tareWeight, netWeight, timestamp))
+            list.add(PrintHistory(id, sequenceNumber, date, time, carNumber, squareWeight, grossWeight, tareWeight, netWeight, timestamp))
         }
         cursor.close()
         db.close()

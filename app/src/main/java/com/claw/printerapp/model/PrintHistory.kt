@@ -9,8 +9,10 @@ data class PrintHistory(
     val date: String,
     val time: String,
     val carNumber: String,
+    val squareWeight: String,
     val grossWeight: String,
     val tareWeight: String,
     val netWeight: String,
     val timestamp: Long = System.currentTimeMillis()
 )
+

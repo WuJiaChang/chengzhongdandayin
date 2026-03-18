@@ -59,7 +59,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var printHistoryAdapter: PrintHistoryAdapter
 
     private val REQUEST_PERMISSION_CODE = 1001
-    private var printSequenceNumber = 1  // 打印序号
+    private var printSequenceNumber = 1  // 每日打印序号
+    private var lastPrintDate = ""  // 上次打印的日期
 
     // 日期选择器
     private var selectedDate: Calendar = Calendar.getInstance()
@@ -228,6 +229,7 @@ class MainActivity : AppCompatActivity() {
     private fun initDateTime() {
         setCurrentDate()
         setCurrentTime()
+        checkAndResetDailySequence()
         updateSequenceNumber()
     }
 
@@ -245,6 +247,28 @@ class MainActivity : AppCompatActivity() {
     private fun setCurrentTime() {
         val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         etTime.setText(sdf.format(Date()))
+    }
+
+    /**
+     * 检查并重置每日序号
+     */
+    private fun checkAndResetDailySequence() {
+        val currentDate = etDate.text.toString()
+        if (currentDate != lastPrintDate) {
+            // 日期变化，重置序号为1
+            printSequenceNumber = 1
+            lastPrintDate = currentDate
+        }
+    }
+
+    /**
+     * 获取格式化序号（年月日+序号）
+     */
+    private fun getFormattedSequenceNumber(): String {
+        val date = etDate.text.toString()
+        val datePart = date.replace("-", "")  // 去掉横线，变成 20260318
+        val sequencePart = String.format("%04d", printSequenceNumber)
+        return "$datePart$sequencePart"  // 202603180001
     }
 
     /**
@@ -279,7 +303,7 @@ class MainActivity : AppCompatActivity() {
      * 更新序号显示
      */
     private fun updateSequenceNumber() {
-        tvSequenceNumber.text = String.format("%04d", printSequenceNumber)
+        tvSequenceNumber.text = getFormattedSequenceNumber()
     }
 
     /**
@@ -491,6 +515,7 @@ class MainActivity : AppCompatActivity() {
             date = printHistory.date,
             time = printHistory.time,
             carNumber = printHistory.carNumber,
+            squareWeight = printHistory.squareWeight,
             grossWeight = printHistory.grossWeight,
             tareWeight = printHistory.tareWeight,
             netWeight = printHistory.netWeight
@@ -514,6 +539,9 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "请先连接打印机", Toast.LENGTH_SHORT).show()
             return
         }
+
+        // 检查并重置每日序号
+        checkAndResetDailySequence()
 
         // 获取输入数据
         val carNumber = etCarNumber.text.toString().trim()
@@ -540,13 +568,18 @@ class MainActivity : AppCompatActivity() {
         val grossWeightFormatted = "${grossWeight.replace(" kg", "")}(kg)"
         val tareWeightFormatted = "${tareWeight}(kg)"
         val netWeightFormatted = "${netWeight.replace(" kg", "")}(kg)"
+        val squareWeightFormatted = "${squareWeight}m³"
+
+        // 获取格式化序号
+        val formattedSequenceNumber = getFormattedSequenceNumber()
 
         // 生成ESC/POS打印数据
         val printData = escPosPrinter.generateWeightReceipt(
-            sequenceNumber = String.format("%04d", printSequenceNumber),
+            sequenceNumber = formattedSequenceNumber,
             date = date,
             time = time,
             carNumber = carNumber,
+            squareWeight = squareWeightFormatted,
             grossWeight = grossWeightFormatted,
             tareWeight = tareWeightFormatted,
             netWeight = netWeightFormatted
@@ -563,6 +596,7 @@ class MainActivity : AppCompatActivity() {
                 date = date,
                 time = time,
                 carNumber = carNumber,
+                squareWeight = squareWeightFormatted,
                 grossWeight = grossWeightFormatted,
                 tareWeight = tareWeightFormatted,
                 netWeight = netWeightFormatted

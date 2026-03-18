@@ -48,8 +48,8 @@ class PrintHistoryAdapter(
         // 车号
         holder.tvCarNumber.text = "车号: ${printHistory.carNumber}"
 
-        // 重量信息
-        holder.tvWeights.text = "毛重: ${printHistory.grossWeight} | 皮重: ${printHistory.tareWeight} | 净重: ${printHistory.netWeight}"
+        // 方量和重量信息
+        holder.tvWeights.text = "方量: ${printHistory.squareWeight} | 毛重: ${printHistory.grossWeight} | 皮重: ${printHistory.tareWeight} | 净重: ${printHistory.netWeight}"
 
         // 删除按钮
         holder.btnDelete.setOnClickListener {

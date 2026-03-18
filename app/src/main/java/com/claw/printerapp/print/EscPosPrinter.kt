@@ -223,6 +223,7 @@ class EscPosPrinter {
         date: String,
         time: String,
         carNumber: String,
+        squareWeight: String,
         grossWeight: String,
         tareWeight: String,
         netWeight: String
@@ -257,6 +258,11 @@ class EscPosPrinter {
             .print("车号      ")
             .bold(false)
             .printLine(carNumber)
+            .printEmptyLine(1)
+            .bold(true)
+            .print("方量  ")
+            .bold(false)
+            .printLine(squareWeight)
             .printEmptyLine(1)
             .bold(true)
             .print("毛重  ")
