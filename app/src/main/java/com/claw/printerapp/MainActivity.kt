@@ -213,8 +213,8 @@ class MainActivity : AppCompatActivity() {
             val tareWeight = tareWeightStr.toDoubleOrNull() ?: 0.0
             val grossWeight = netWeight + tareWeight
 
-            // 格式化显示（保留2位小数）
-            val df = DecimalFormat("#0.00")
+            // 格式化显示（整数时不显示小数点，小数时保留2位）
+            val df = DecimalFormat("#.##")  // 整数时不显示小数点，最多保留2位小数
             tvNetWeight.text = df.format(netWeight)
             tvGrossWeight.text = df.format(grossWeight)
         } else {
@@ -262,13 +262,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 获取格式化序号（年月日+序号）
+     * 获取格式化序号（只保留0001）
      */
     private fun getFormattedSequenceNumber(): String {
-        val date = etDate.text.toString()
-        val datePart = date.replace("-", "")  // 去掉横线，变成 20260318
-        val sequencePart = String.format("%04d", printSequenceNumber)
-        return "$datePart$sequencePart"  // 202603180001
+        // 只返回4位序号，去掉年月日部分
+        return String.format("%04d", printSequenceNumber)
     }
 
     /**
@@ -564,11 +562,12 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 格式化重量（添加(kg)）
-        val grossWeightFormatted = "${grossWeight.replace(" kg", "")}(kg)"
-        val tareWeightFormatted = "${tareWeight}(kg)"
-        val netWeightFormatted = "${netWeight.replace(" kg", "")}(kg)"
-        val squareWeightFormatted = "${squareWeight}m³"
+        // 格式化重量（添加(kg)，整数时不显示小数点）
+        val df = DecimalFormat("#.##")  // 整数时不显示小数点，最多保留2位小数
+        val grossWeightFormatted = "${df.format(grossWeight.replace(" kg", "").toDoubleOrNull() ?: 0.0)}(kg)"
+        val tareWeightFormatted = "${df.format(tareWeight.toDoubleOrNull() ?: 0.0)}(kg)"
+        val netWeightFormatted = "${df.format(netWeight.replace(" kg", "").toDoubleOrNull() ?: 0.0)}(kg)"
+        val squareWeightFormatted = squareWeight  // 方量只保留数值，去掉单位
 
         // 获取格式化序号
         val formattedSequenceNumber = getFormattedSequenceNumber()

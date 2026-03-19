@@ -173,14 +173,14 @@ class EscPosPrinter {
      * 打印分割线
      */
     fun printLineSeparator(): EscPosPrinter {
-        return printLine("================================")
+        return printLine("===============")
     }
 
     /**
      * 打印点分割线
      */
     fun printDotSeparator(): EscPosPrinter {
-        return printLine("--------------------------------")
+        return printLine("---------------")
     }
 
     /**
@@ -228,59 +228,45 @@ class EscPosPrinter {
         tareWeight: String,
         netWeight: String
     ): ByteArray {
+        // 打印机标准宽度32字符（2倍宽字体下相当于16字符）
+        val lineWidth = 16  // 2倍宽字体下的有效行宽
+        val labelWidth = 4    // 标签占4字符
+
         return clear()
             .initPrinter()
             .alignCenter()
-            .setFontSize(2, 2)  // 2倍宽、2倍高的大字体
+            .setFontSize(2, 2)  // 2倍宽、2倍高的大字体用于标题
             .bold(true)
             .printLine("称重单")
-            .setFontSize(2, 1)  // 2倍宽、1倍高的宽字体用于内容
+            .setFontSize(2, 2)  // 2倍宽、1倍高的字体用于内容（避免过高）
             .bold(false)
             .printEmptyLine(1)
-            .printLineSeparator()
+            .printLineSeparator()  // 第一条分割线：在"称重单"下方
             .alignLeft()
-            .bold(true)
-            .print("序号      ")
-            .bold(false)
-            .printLine(sequenceNumber)
+            // 根据数值实际长度动态计算填充空格，让数值右对齐到行末
+            .printLine(formatRow("序号", sequenceNumber, lineWidth, labelWidth))
+            .printLine(formatRow("日期", date, lineWidth, labelWidth))
+            .printLine(formatRow("时间", time, lineWidth, labelWidth))
+            .printLine(formatRow("车号", carNumber, lineWidth, labelWidth))
+            .printLine(formatRow("方量", squareWeight, lineWidth, labelWidth))
+            .printLine(formatRow("毛重", grossWeight, lineWidth, labelWidth))
+            .printLine(formatRow("皮重", tareWeight, lineWidth, labelWidth))
+            .printLine(formatRow("净重", netWeight, lineWidth, labelWidth))
             .printEmptyLine(1)
-            .bold(true)
-            .print("日期  ")
-            .bold(false)
-            .printLine(date)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("时间    ")
-            .bold(false)
-            .printLine(time)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("车号      ")
-            .bold(false)
-            .printLine(carNumber)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("方量  ")
-            .bold(false)
-            .printLine(squareWeight)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("毛重  ")
-            .bold(false)
-            .printLine(grossWeight)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("皮重  ")
-            .bold(false)
-            .printLine(tareWeight)
-            .printEmptyLine(1)
-            .bold(true)
-            .print("净重  ")
-            .bold(false)
-            .printLine(netWeight)
-            .printEmptyLine(2)
             .alignCenter()
+            .printLineSeparator()  // 第二条分割线：在最底部
+            .printEmptyLine(2)  // 底部留更多余量
             .feedAndCut()
             .getBytes()
+    }
+
+    /**
+     * 格式化一行：标签左对齐，数值右对齐
+     */
+    private fun formatRow(label: String, value: String, lineWidth: Int, labelWidth: Int): String {
+        // 计算需要的空格数：行宽 - 标签宽度 - 数值实际宽度 + 1（额外往右挪一格）
+        val padding = lineWidth - labelWidth - value.length
+        val space = if (padding > 0) " ".repeat(padding) else ""
+        return "$label$space$value"
     }
 }

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
@@ -11,9 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:padding="16dp"
         android:gravity="center_vertical">
 
+        <!-- 车号皮重信息 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -22,30 +23,32 @@
 
             <TextView
                 android:id="@+id/tvCarNumber"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="车号"
+                android:text="车号: 6373"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"/>
 
             <TextView
                 android:id="@+id/tvTareWeight"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="皮重: 0"
+                android:layout_marginTop="4dp"
+                android:text="皮重: 20500 kg"
                 android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginTop="4dp"/>
+                android:textColor="@android:color/darker_gray"/>
         </LinearLayout>
 
+        <!-- 删除按钮 -->
         <Button
             android:id="@+id/btnDelete"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/delete"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:textColor="@android:color/holo_red_dark"/>
+            android:layout_marginStart="8dp"
+            android:text="删除"
+            style="@style/Widget.Material3.Button.OutlinedButton"/>
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

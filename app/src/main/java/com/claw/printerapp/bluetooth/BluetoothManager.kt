@@ -52,65 +52,86 @@ class BluetoothManager(private val context: Context) {
      */
     @SuppressLint("MissingPermission")
     fun connectDevice(device: BluetoothDevice, callback: BluetoothConnectionCallback) {
-        // 确保先完全断开之前的连接
-        if (bluetoothSocket?.isConnected == true) {
-            disconnect()
-            // 等待 socket 完全关闭
-            Thread.sleep(500)
-        }
-
-        try {
-            Log.d(TAG, "开始连接设备: ${device.name}")
-            callback.onConnecting()
-
-            // 尝试多种方式创建 socket
-            var socket: BluetoothSocket? = null
-            var exception: IOException? = null
-
-            try {
-                // 方式1: 标准 SPP UUID
-                socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
-            } catch (e: IOException) {
-                exception = e
+        // 在后台线程中处理连接逻辑
+        Thread {
+            // 确保先完全断开之前的连接
+            if (bluetoothSocket?.isConnected == true) {
+                disconnect()
+                // 等待 socket 完全关闭
                 try {
-                    // 方式2: 使用反射方式创建 socket（兼容更多打印机）
-                    val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                    socket = m.invoke(device, 1) as BluetoothSocket
-                } catch (e2: Exception) {
-                    Log.e(TAG, "反射创建 socket 失败", e2)
+                    Thread.sleep(500)
+                } catch (e: InterruptedException) {
+                    Log.e(TAG, "等待断开被中断", e)
                 }
             }
 
-            if (socket == null) {
-                callback.onConnectionFailed("无法创建 socket: ${exception?.message}")
-                return
-            }
+            try {
+                Log.d(TAG, "开始连接设备: ${device.name}")
 
-            bluetoothSocket = socket
+                // 切换回主线程显示连接状态
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    callback.onConnecting()
+                }
 
-            // 连接（主线程外执行）
-            Thread {
+                // 尝试多种方式创建 socket
+                var socket: BluetoothSocket? = null
+                var exception: IOException? = null
+
+                try {
+                    // 方式1: 标准 SPP UUID
+                    socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                } catch (e: IOException) {
+                    exception = e
+                    try {
+                        // 方式2: 使用反射方式创建 socket（兼容更多打印机）
+                        val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                        socket = m.invoke(device, 1) as BluetoothSocket
+                    } catch (e2: Exception) {
+                        Log.e(TAG, "反射创建 socket 失败", e2)
+                    }
+                }
+
+                if (socket == null) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        callback.onConnectionFailed("无法创建 socket: ${exception?.message}")
+                    }
+                    return@Thread
+                }
+
+                bluetoothSocket = socket
+
                 try {
                     bluetoothSocket?.connect()
 
                     // 连接成功后在主线程回调
-                    outputStream = bluetoothSocket?.outputStream
-
-                    Log.d(TAG, "连接成功: ${device.name}")
-                    callback.onConnected(device)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        try {
+                            outputStream = bluetoothSocket?.outputStream
+                            Log.d(TAG, "连接成功: ${device.name}")
+                            callback.onConnected(device)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "连接后处理失败", e)
+                            disconnect()
+                            callback.onConnectionFailed(e.message ?: "连接后处理失败")
+                        }
+                    }
 
                 } catch (e: IOException) {
                     Log.e(TAG, "连接失败", e)
-                    disconnect()
-                    callback.onConnectionFailed(e.message ?: "连接失败")
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        disconnect()
+                        callback.onConnectionFailed(e.message ?: "连接失败")
+                    }
                 }
-            }.start()
 
-        } catch (e: Exception) {
-            Log.e(TAG, "连接过程异常", e)
-            disconnect()
-            callback.onConnectionFailed(e.message ?: "连接异常")
-        }
+            } catch (e: Exception) {
+                Log.e(TAG, "连接过程异常", e)
+                disconnect()
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    callback.onConnectionFailed(e.message ?: "连接异常")
+                }
+            }
+        }.start()
     }
 
     /**

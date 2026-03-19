@@ -25,15 +25,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0001"
-                android:textSize="18sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:textColor="@android:color/white"
                 android:background="@android:color/holo_blue_light"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
                 android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:textColorHint="@android:color/white"/>
+                android:paddingBottom="4dp"/>
 
             <Space
                 android:layout_width="0dp"
@@ -66,8 +65,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="毛重: 67920(kg) | 皮重: 20500(kg) | 净重: 47420(kg)"
-            android:textSize="14sp"
+            android:text="方量: 20m³ | 毛重: 67920(kg) | 皮重: 20500(kg) | 净重: 47420(kg)"
+            android:textSize="12sp"
             android:textColor="@android:color/darker_gray"/>
 
         <!-- 操作按钮 -->
