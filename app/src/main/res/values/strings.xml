@@ -31,4 +31,5 @@
     <string name="auto_tare">自动匹配皮重</string>
     <string name="manual_input">手动输入</string>
     <string name="print_history">打印历史</string>
+    <string name="custom_coefficient">自定义系数</string>
 </resources>

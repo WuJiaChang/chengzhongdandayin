@@ -13,6 +13,7 @@ import android.text.TextWatcher
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -54,6 +55,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnPrintHistory: Button
     private lateinit var btnPrint: Button
     private lateinit var tvSequenceNumber: TextView
+    private lateinit var spinnerCoefficient: Spinner
+    private lateinit var tilCustomCoefficient: com.google.android.material.textfield.TextInputLayout
+    private lateinit var etCustomCoefficient: TextInputEditText
+    private lateinit var scrollView: androidx.core.widget.NestedScrollView
 
     private lateinit var carTareAdapter: CarTareAdapter
     private lateinit var printHistoryAdapter: PrintHistoryAdapter
@@ -89,6 +94,10 @@ class MainActivity : AppCompatActivity() {
         btnPrintHistory = findViewById(R.id.btnPrintHistory)
         btnPrint = findViewById(R.id.btnPrint)
         tvSequenceNumber = findViewById(R.id.tvSequenceNumber)
+        spinnerCoefficient = findViewById(R.id.spinnerCoefficient)
+        tilCustomCoefficient = findViewById(R.id.tilCustomCoefficient)
+        etCustomCoefficient = findViewById(R.id.etCustomCoefficient)
+        scrollView = findViewById(R.id.scrollView)
     }
 
     private fun initManagers() {
@@ -98,9 +107,72 @@ class MainActivity : AppCompatActivity() {
         escPosPrinter = EscPosPrinter()
         updateBluetoothStatus()
         initDateTime()
+        initCoefficientSpinner()
+    }
+
+    /**
+     * 初始化系数选择下拉框
+     */
+    private fun initCoefficientSpinner() {
+        // 创建下拉选项
+        val coefficientOptions = listOf(
+            "混凝土 2360-2370",
+            "砂浆 1795-1805", 
+            "其他 (自定义)"
+        )
+        
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, coefficientOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCoefficient.adapter = adapter
+        
+        // 设置默认选中第一项（混凝土）
+        spinnerCoefficient.setSelection(0)
     }
 
     private fun setupListeners() {
+        // 系数选择监听
+        spinnerCoefficient.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                // 当选择"其他"时显示自定义系数输入框
+                if (position == 2) { // "其他 (自定义)"选项
+                    tilCustomCoefficient.visibility = android.view.View.VISIBLE
+                    // 延迟一点时间，确保视图已经显示，然后滚动到输入框并聚焦
+                    etCustomCoefficient.postDelayed({
+                        // 滚动到自定义系数输入框，确保它在屏幕可见区域
+                        scrollView.post {
+                            val location = IntArray(2)
+                            etCustomCoefficient.getLocationOnScreen(location)
+                            val y = location[1]
+                            scrollView.smoothScrollTo(0, y - 200) // 减去200像素，让输入框在屏幕中间偏上位置
+                        }
+                        etCustomCoefficient.requestFocus()
+                        // 显示软键盘
+                        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                        imm.showSoftInput(etCustomCoefficient, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    }, 150)
+                } else {
+                    tilCustomCoefficient.visibility = android.view.View.GONE
+                    etCustomCoefficient.text?.clear()
+                }
+                calculateWeights()
+            }
+
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                // 什么都不做
+            }
+        }
+
+        // 自定义系数输入监听
+        etCustomCoefficient.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                calculateWeights()
+            }
+        })
+
         // 蓝牙连接按钮
         btnConnectBluetooth.setOnClickListener {
             if (bluetoothManager.isConnected()) {
@@ -193,7 +265,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * 计算净重和毛重
-     * 净重 = 方量 × 随机系数(2.36-2.37)
+     * 净重 = 方量 × 系数
      * 毛重 = 净重 + 皮重
      */
     private fun calculateWeights() {
@@ -203,11 +275,31 @@ class MainActivity : AppCompatActivity() {
         if (squareWeightStr.isNotEmpty()) {
             val squareWeight = squareWeightStr.toDoubleOrNull() ?: 0.0
 
-            // 生成2360-2370之间的随机系数
-            val randomCoefficient = (2360..2370).random()
-
-            // 净重 = 方量 × 随机系数
-            val netWeight = squareWeight * randomCoefficient
+            // 根据选择的系数类型计算净重
+            val netWeight = when (spinnerCoefficient.selectedItemPosition) {
+                0 -> { // 混凝土 2360-2370
+                    val randomCoefficient = (2360..2370).random()
+                    squareWeight * randomCoefficient
+                }
+                1 -> { // 砂浆 1795-1805
+                    val randomCoefficient = (1795..1805).random()
+                    squareWeight * randomCoefficient
+                }
+                2 -> { // 自定义系数
+                    val customCoefficientStr = etCustomCoefficient.text.toString()
+                    if (customCoefficientStr.isNotEmpty()) {
+                        val customCoefficient = customCoefficientStr.toDoubleOrNull() ?: 0.0
+                        if (customCoefficient > 0) {
+                            squareWeight * customCoefficient
+                        } else {
+                            0.0
+                        }
+                    } else {
+                        0.0
+                    }
+                }
+                else -> squareWeight * 2360  // 默认使用混凝土系数
+            }
 
             // 毛重 = 净重 + 皮重
             val tareWeight = tareWeightStr.toDoubleOrNull() ?: 0.0

@@ -41,7 +41,6 @@ class PrintHistoryAdapter(
         holder.tvSequenceNumber.text = String.format("%04d", printHistory.sequenceNumber)
 
         // 日期时间
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val fullDateTime = "${printHistory.date} ${printHistory.time}"
         holder.tvDateTime.text = fullDateTime
 
