@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_PERMISSION_CODE = 1001
     private var printSequenceNumber = 1  // 每日打印序号
     private var lastPrintDate = ""  // 上次打印的日期
+    private var hasUpdatedDateTimeForCurrentInput = false  // 防止频繁更新时间
 
     // 日期选择器
     private var selectedDate: Calendar = Calendar.getInstance()
@@ -108,6 +109,8 @@ class MainActivity : AppCompatActivity() {
         updateBluetoothStatus()
         initDateTime()
         initCoefficientSpinner()
+        // 初始化时重置时间更新状态
+        resetDateTimeUpdateState()
     }
 
     /**
@@ -193,7 +196,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 车号输入监听，自动匹配皮重
+        // 车号输入监听，自动匹配皮重并更新日期时间
         etCarNumber.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -207,18 +210,31 @@ class MainActivity : AppCompatActivity() {
                         etTareWeight.setText(tareWeight.toString())
                         Toast.makeText(this@MainActivity, "自动匹配皮重：$tareWeight", Toast.LENGTH_SHORT).show()
                     }
+                    // 自动更新日期和时间（带防抖）
+                    autoUpdateDateTime()
+                } else {
+                    // 车号清空时重置时间更新状态
+                    resetDateTimeUpdateState()
                 }
                 calculateWeights()
             }
         })
 
-        // 方量输入监听
+        // 方量输入监听，自动更新日期时间
         etSquareWeight.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
             override fun afterTextChanged(s: Editable?) {
+                val squareWeight = s.toString().trim()
+                if (squareWeight.isNotEmpty()) {
+                    // 自动更新日期和时间（带防抖）
+                    autoUpdateDateTime()
+                } else {
+                    // 方量清空时重置时间更新状态
+                    resetDateTimeUpdateState()
+                }
                 calculateWeights()
             }
         })
@@ -339,6 +355,26 @@ class MainActivity : AppCompatActivity() {
     private fun setCurrentTime() {
         val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         etTime.setText(sdf.format(Date()))
+    }
+
+    /**
+     * 自动更新日期和时间（带防抖）
+     * 只在第一次输入时更新时间，避免频繁更新
+     */
+    private fun autoUpdateDateTime() {
+        if (!hasUpdatedDateTimeForCurrentInput) {
+            setCurrentDate()
+            setCurrentTime()
+            hasUpdatedDateTimeForCurrentInput = true
+        }
+    }
+
+    /**
+     * 重置时间更新状态
+     * 在打印完成后或用户手动清除输入时调用
+     */
+    private fun resetDateTimeUpdateState() {
+        hasUpdatedDateTimeForCurrentInput = false
     }
 
     /**
@@ -697,6 +733,9 @@ class MainActivity : AppCompatActivity() {
             // 打印成功后序号自增
             printSequenceNumber++
             updateSequenceNumber()
+            
+            // 重置时间更新状态，为下一次输入做准备
+            resetDateTimeUpdateState()
         } else {
             Toast.makeText(this, getString(R.string.print_failed), Toast.LENGTH_SHORT).show()
         }
